@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Slap Battle Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#17123a;--pn:#241c57;--y:#ffcf33;--r:#ff5a4e;--m:#38e0a1;--tx:#fff6e0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;background:radial-gradient(circle at 50% 0,#3a2a8f,var(--bg) 60%);color:var(--tx);font-family:Mitr,'Noto Sans Thai',sans-serif;min-height:100dvh}
+.scr{display:none;max-width:520px;margin:0 auto;padding:16px;min-height:100dvh;flex-direction:column;gap:12px;align-items:center;justify-content:center}
+.scr.on{display:flex}
+h1{margin:0;font-size:clamp(34px,10vw,54px);line-height:1;text-align:center;color:var(--y);text-shadow:0 4px 0 var(--r),0 8px 0 #0006;transform:rotate(-2deg)}
+h2{margin:0}
+button,input{font:inherit}
+button{border:0;border-radius:14px;padding:12px 18px;font-weight:600;font-size:17px;color:#2a1a00;background:var(--y);box-shadow:0 5px 0 #b88a00;cursor:pointer;transition:transform .08s,box-shadow .08s}
+button:active,button.p{transform:translateY(4px);box-shadow:0 1px 0 #b88a00}
+button.r{background:var(--r);color:#fff;box-shadow:0 5px 0 #a02a22}button.m{background:var(--m);box-shadow:0 5px 0 #1b9c6c}button.g{background:#4a3f94;color:var(--tx);box-shadow:0 5px 0 #2c2466}
+button:disabled{opacity:.5}
+input{width:100%;padding:12px 14px;border-radius:12px;border:3px solid #4a3f94;background:#120d30;color:var(--tx);font-size:18px;text-align:center}
+input:focus,button:focus-visible{outline:3px solid var(--m)}
+.col{display:flex;flex-direction:column;gap:12px;width:100%}.row{display:flex;gap:10px;width:100%}.row>*{flex:1}
+#code{letter-spacing:.3em}
+.code{font-size:56px;letter-spacing:.12em;color:var(--y);background:var(--pn);padding:6px 18px;border-radius:16px;border:3px dashed var(--y)}
+.slot{display:flex;align-items:center;gap:12px;background:var(--pn);border-radius:14px;padding:10px 14px;width:100%;border-left:8px solid var(--m)}
+.slot.e{opacity:.5;border-color:#555}.slot .em{font-size:38px}
+#toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--r);padding:10px 18px;border-radius:12px;font-weight:600;z-index:9;display:none;max-width:90vw;text-align:center}
+#picker{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:8;padding:16px}
+#picker.on{display:flex}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--pn);padding:14px;border-radius:18px;max-width:420px;width:100%}
+.grid button{display:flex;flex-direction:column;align-items:center;padding:8px 2px;font-size:11px;background:#33297a;color:var(--tx);box-shadow:0 4px 0 #1a1342}
+.grid button.sel{background:var(--y);color:#2a1a00}.grid .em{font-size:30px}
+#game{padding:8px;gap:8px;justify-content:flex-start}
+.hud{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;width:100%;align-items:start}
+.pl{background:var(--pn);border-radius:12px;padding:6px 10px;font-size:13px}.pl b{font-size:15px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .sc{font-size:26px;color:var(--y);line-height:1.1}.bar{height:8px;background:#120d30;border-radius:6px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:var(--m);width:0;transition:width .15s}
+.tm{font-size:34px;color:var(--y);text-align:center;min-width:56px}
+canvas#cv{width:100%;max-width:520px;aspect-ratio:3/2;border-radius:16px;border:4px solid #4a3f94;background:#000;touch-action:none}
+.wrap{position:relative;width:100%;max-width:520px}
+#cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:96px;color:var(--y);text-shadow:0 6px 0 var(--r);pointer-events:none}
+body{overscroll-behavior:none;touch-action:manipulation}
+#game{height:100dvh;justify-content:space-between;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+.ctl{display:grid;grid-template-columns:1fr 1.3fr;gap:10px;width:100%;max-width:520px;touch-action:none}
+.cl,.cr{display:grid;gap:10px}.cl{grid-template-rows:1fr 1fr}.cr{grid-template-rows:auto 1fr}
+.ctl button{min-height:64px;font-size:22px;touch-action:none;border-radius:18px}
+.cr button.r{min-height:120px;font-size:34px}
+.cd .ctl button{opacity:.45}
+#bs.full{animation:pu .6s infinite alternate}@keyframes pu{to{transform:scale(1.04);filter:brightness(1.3)}}
+@media(orientation:landscape) and (max-height:520px){
+ #game{display:grid;grid-template-columns:130px 1fr 130px;grid-template-areas:"hud hud hud" "cl wrap cr" "cl aud cr";align-content:stretch;justify-content:stretch;gap:6px;max-width:none}
+ #game .hud{grid-area:hud}#game .wrap{grid-area:wrap;justify-self:center;max-width:min(100%,calc((100dvh - 120px)*1.5))}
+ .ctl{display:contents}.cl{grid-area:cl}.cr{grid-area:cr}.cl,.cr{align-self:stretch;grid-template-rows:1fr 1fr}.cr button.r{min-height:0;font-size:30px}.ctl button{min-height:0}
+ #game .aud{grid-area:aud;justify-self:center}}
+#bs{background:linear-gradient(90deg,var(--m) var(--e,0%),#4a3f94 var(--e,0%));color:#fff;box-shadow:0 5px 0 #2c2466}
+.aud{display:flex;gap:10px;align-items:center;font-size:14px}.aud input{width:110px;padding:0}
+table{width:100%;border-collapse:collapse;background:var(--pn);border-radius:14px;overflow:hidden}td,th{padding:8px;text-align:center}th{background:#33297a}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="toast"></div>
+
+<section id="menu" class="scr on">
+  <h1>SLAP<br>BATTLE ARENA</h1>
+  <canvas id="pc" width="160" height="150"></canvas>
+  <div class="col">
+    <input id="name" maxlength="12" placeholder="ชื่อผู้เล่น (ไม่เกิน 12 ตัวอักษร)">
+    <button id="bPlay" class="r">เล่นเกม (จับคู่อัตโนมัติ)</button>
+    <div class="row"><button id="bCreate" class="m">สร้างห้อง</button><button id="bJoin" class="m">เข้าร่วมห้อง</button></div>
+    <div id="jb" class="row" style="display:none"><input id="code" inputmode="numeric" maxlength="6" placeholder="••••••"><button id="bGo">เข้าห้อง</button></div>
+    <button id="bChar" class="g">เลือกตัวละคร</button>
+  </div>
+</section>
+
+<section id="lobby" class="scr">
+  <h2>ห้องรอผู้เล่น</h2>
+  <div class="code" id="lc">------</div>
+  <div class="row"><button id="bCopy" class="g">คัดลอกรหัส</button><button id="bLink" class="g">คัดลอกลิงก์</button></div>
+  <div id="cnt" style="font-size:20px"></div>
+  <div class="col" id="slots"></div>
+  <button id="bChar2" class="g">เปลี่ยนตัวละคร</button>
+  <button id="bStart" class="r" style="display:none">เริ่มเกม</button>
+  <div id="wait" style="opacity:.8"></div>
+  <button id="bLeave" class="g">ออกจากห้อง</button>
+</section>
+
+<section id="game" class="scr">
+  <div class="hud">
+    <div class="pl" id="h0"></div><div class="tm" id="tm">90</div><div class="pl" id="h1"></div>
+  </div>
+  <div class="wrap"><canvas id="cv" width="480" height="320"></canvas><div id="cd"></div></div>
+  <div class="ctl">
+    <div class="cl"><button data-a="dodge" class="m">หลบ</button><button data-a="guard" class="g">ป้องกัน</button></div>
+    <div class="cr"><button id="bs" data-a="special">พิเศษ</button><button data-a="slap" class="r">ตบ</button></div>
+  </div>
+  <div class="aud"><button id="bMus" class="g" style="padding:6px 12px;font-size:14px">เพลง: เปิด</button><label>เสียง <input id="vol" type="range" min="0" max="100" value="70"></label></div>
+</section>
+
+<section id="result" class="scr">
+  <h1 id="rw" style="font-size:40px"></h1>
+  <table id="rt"></table>
+  <button id="bAgain" class="r">เล่นอีกครั้ง</button>
+  <div id="rwait" style="opacity:.8"></div>
+  <button id="bMenu" class="g">กลับหน้าเมนู</button>
+</section>
+
+<div id="picker"><div class="grid" id="pg"></div></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[<>&"]/g,'');
+const CH=[['นักสู้สายฮา','🤪','#ffb703'],['นักมวย','🥊','#e63946'],['นินจา','🥷','#4a4e69'],['หุ่นยนต์','🤖','#8ecae6'],
+['มนุษย์ต่างดาว','👽','#52b788'],['สายความเร็ว','🏃','#f77f00'],['สายพลัง','🦍','#9c6644'],['ตัวละครลับ','🎭','#9d4edd']];
+let tok=sessionStorage.tok||(sessionStorage.tok=Math.random().toString(36).slice(2)+Date.now().toString(36));
+let myChar=+localStorage.char||0,S=null,shake=0,texts=[],seen={};
+$('name').value=localStorage.name||'';
+const s=io();
+s.on('connect',()=>{if(sessionStorage.code)s.emit('resume',{code:sessionStorage.code,tok})});
+s.on('disconnect',()=>toast('การเชื่อมต่อหลุด กำลังเชื่อมต่อใหม่...'));
+s.on('state',st=>{S=st;sessionStorage.code=st.code;render()});
+s.on('gone',()=>{sessionStorage.removeItem('code');S=null;render()});
+s.on('err',toast);
+s.on('peerLeft',()=>toast('อีกฝ่ายออกจากเกมแล้ว'));
+s.on('fx',onFx);
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',2600)}
+function show(id){document.querySelectorAll('.scr').forEach(e=>e.classList.toggle('on',e.id===id))}
+const info=()=>{const n=$('name').value.trim();localStorage.name=n;return{tok,name:n||'ผู้เล่น',char:myChar}};
+$('bPlay').onclick=()=>{ac();s.emit('quick',info())};
+$('bCreate').onclick=()=>{ac();s.emit('create',info())};
+$('bJoin').onclick=()=>{$('jb').style.display='flex';$('code').focus()};
+$('bGo').onclick=()=>{ac();s.emit('join',{...info(),code:$('code').value})};
+$('code').oninput=e=>e.target.value=e.target.value.replace(/\D/g,'');
+const q=new URLSearchParams(location.search).get('room');
+if(q){$('jb').style.display='flex';$('code').value=q.replace(/\D/g,'').slice(0,6)}
+const leave=()=>{s.emit('leave');S=null;sessionStorage.removeItem('code');render()};
+$('bLeave').onclick=leave;$('bMenu').onclick=leave;
+$('bStart').onclick=()=>s.emit('start');$('bAgain').onclick=()=>s.emit('start');
+const copy=t=>{(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('คัดลอกแล้ว')).catch(()=>toast('คัดลอกไม่ได้ ให้จดรหัสแทน'))};
+$('bCopy').onclick=()=>copy(S.code);$('bLink').onclick=()=>copy(location.origin+'/?room='+S.code);
+// เลือกตัวละคร
+$('pg').innerHTML=CH.map((c,i)=>`<button data-i="${i}"><span class="em">${c[1]}</span>${c[0]}</button>`).join('');
+const openPick=()=>{[...$('pg').children].forEach((b,i)=>b.classList.toggle('sel',i===myChar));$('picker').classList.add('on')};
+$('bChar').onclick=openPick;$('bChar2').onclick=openPick;
+$('pg').onclick=e=>{const b=e.target.closest('button');if(!b)return;myChar=+b.dataset.i;localStorage.char=myChar;$('picker').classList.remove('on');if(S)s.emit('setChar',myChar)};
+$('picker').onclick=e=>{if(e.target.id==='picker')$('picker').classList.remove('on')};
+
+function render(){
+  if(!S){show('menu');return}
+  const ph=S.phase;show(ph==='lobby'?'lobby':ph==='over'?'result':'game');
+  if(ph==='lobby')lobby();else if(ph==='over')result();else hud();
+}
+function lobby(){
+  $('lc').textContent=S.code;const n=S.players.length;$('cnt').textContent=`ผู้เล่น ${n}/2 คน`;
+  $('slots').innerHTML=[0,1].map(i=>{const p=S.players[i];return p?`<div class="slot"><span class="em">${CH[p.char][1]}</span><div>${esc(p.name)}${p.tok===tok?' (คุณ)':''}<br><small>${p.tok===S.owner?'เจ้าของห้อง':'ผู้เข้าร่วม'} · ${CH[p.char][0]}</small></div></div>`:`<div class="slot e"><span class="em">⏳</span>รอผู้เล่นคนที่ 2...</div>`}).join('');
+  const own=S.owner===tok;$('bStart').style.display=own&&n===2?'':'none';
+  $('wait').textContent=n<2?'ส่งรหัสห้องหรือลิงก์ให้เพื่อน':(own?'':'รอเจ้าของห้องกดเริ่มเกม');
+}
+function result(){
+  const w=S.winner;$('rw').textContent=w==='draw'?'เสมอ!':(S.players.find(p=>p.tok===w)||{name:''}).name+' ชนะ!';
+  $('rt').innerHTML='<tr><th></th>'+S.players.map(p=>`<th>${CH[p.char][1]} ${esc(p.name)}</th>`).join('')+'</tr>'+
+   [['คะแนน','score'],['ตบโดน','hits'],['หลบสำเร็จ','dodges'],['คอมโบสูงสุด','maxCombo']].map(r=>`<tr><td>${r[0]}</td>`+S.players.map(p=>`<td>${p[r[1]]}</td>`).join('')+'</tr>').join('');
+  const own=S.owner===tok;$('bAgain').style.display=own?'':'none';$('rwait').textContent=own?'':'รอเจ้าของห้องกดเล่นอีกครั้ง';
+  if(w===tok)sfx.win();
+}
+function hud(){
+  S.players.forEach((p,i)=>{$('h'+i).innerHTML=`<b>${CH[p.char][1]} ${esc(p.name)}${p.online?'':' (หลุด)'}</b><span class="sc">${p.score}</span> ตบ ${p.hits} · หลบ ${p.dodges}${p.combo>1?` · <span style="color:var(--r)">COMBO x${p.combo}</span>`:''}<div class="bar"><i style="width:${p.energy}%"></i></div>`;
+    if(p.tok===tok){$('bs').style.setProperty('--e',p.energy+'%');$('bs').classList.toggle('full',p.energy>=100)}});
+  $('tm').textContent=S.left;
+  $('cd').textContent=S.phase==='count'?S.count:(S.left>=89?'เริ่ม!':'');
+}
+// ควบคุม
+let busy=0;const DUR={slap:650,dodge:900,guard:1000,special:1100};
+const vib=n=>navigator.vibrate&&navigator.vibrate(n);
+function act(a){
+  if(!S||S.phase!=='play'||Date.now()<busy)return;
+  const me=S.players.find(p=>p.tok===tok);
+  if(a==='special'&&(!me||me.energy<100)){vib(10);return}
+  ac();busy=Date.now()+DUR[a];vib(a==='special'?45:15);s.emit('act',a);
+  const gm=$('game');gm.classList.add('cd');setTimeout(()=>gm.classList.remove('cd'),DUR[a]);
+}
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();b.classList.add('p');act(b.dataset.a)}));
+addEventListener('pointerup',()=>document.querySelectorAll('.ctl .p').forEach(b=>b.classList.remove('p')));
+addEventListener('keydown',e=>{if(e.repeat||/INPUT/.test(e.target.tagName))return;const m={j:'slap',k:'dodge',l:'guard',' ':'special'}[e.key.toLowerCase()];if(m){e.preventDefault();act(m)}});
+// เสียง
+let AC,master,musicOn=true;
+function ac(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=$('vol').value/100;master.connect(AC.destination)}if(AC.state==='suspended')AC.resume()}
+$('vol').oninput=e=>{if(master)master.gain.value=e.target.value/100};
+$('bMus').onclick=()=>{musicOn=!musicOn;$('bMus').textContent='เพลง: '+(musicOn?'เปิด':'ปิด')};
+function tone(f,d,type='square',v=.3,f2){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,AC.currentTime);if(f2)o.frequency.exponentialRampToValueAtTime(f2,AC.currentTime+d);g.gain.setValueAtTime(v,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.connect(g);g.connect(master);o.start();o.stop(AC.currentTime+d)}
+function noise(d,v){if(!AC)return;const b=AC.createBuffer(1,AC.sampleRate*d,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*(1-i/a.length);const n=AC.createBufferSource(),g=AC.createGain();n.buffer=b;g.gain.value=v;n.connect(g);g.connect(master);n.start()}
+const sfx={hit(){noise(.12,.7);tone(180,.12,'sawtooth',.4,60)},dodge(){tone(500,.15,'sine',.3,1100)},block(){tone(300,.1,'square',.3,200)},
+ special(){tone(200,.4,'sawtooth',.5,900);noise(.3,.8)},win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.4),i*150))}};
+const notes=[262,330,392,330,294,370,440,370];let ni=0;
+setInterval(()=>{if(musicOn&&AC&&S&&S.phase==='play'){tone(notes[ni++%8]/2,.2,'triangle',.08)}},240);
+// เอฟเฟกต์
+function onFx(f){ac();if(S&&f.tok===tok&&(f.type==='hit'||f.type==='special'))vib([70]);const i=S?S.players.findIndex(p=>p.tok===f.tok):0,x=i?340:140;
+  if(f.type==='hit'||f.type==='special'){shake=f.type==='special'?18:9;sfx[f.type]();texts.push({t:f.type==='special'?'พลังพิเศษ!':'ตบ!',x,y:150,l:40,c:'#ff5a4e'});if(f.combo>1)texts.push({t:'COMBO x'+f.combo,x,y:110,l:55,c:'#ffcf33'})}
+  else if(f.type==='dodge'){sfx.dodge();texts.push({t:'หลบ!',x,y:150,l:40,c:'#38e0a1'})}
+  else{sfx.block();texts.push({t:'กัน!',x,y:150,l:40,c:'#8ecae6'})}}
+// วาด
+const cv=$('cv'),g=cv.getContext('2d');
+function rr(c,x,y,w,h,r){c.beginPath();c.roundRect?c.roundRect(x,y,w,h,r):c.rect(x,y,w,h);c.fill()}
+function drawChar(c,ch,x,y,dir,an,t,t0,name){
+  c.save();c.translate(x,y);c.scale(dir,1);
+  let dx=0,dy=Math.sin(t/300)*3,rot=0,sy=1,hand=0;const pr=Math.min(1,(t-t0)/(an==='special'?600:350));
+  if(an==='slap'){dx=Math.sin(pr*Math.PI)*45;hand=1}
+  else if(an==='special'){dx=Math.sin(pr*Math.PI)*70;hand=1.8;c.shadowColor='#ffcf33';c.shadowBlur=30}
+  else if(an==='hit'){dx=-24+Math.sin(t/25)*5;rot=-.25}
+  else if(an==='dodge'){dx=-32;sy=.75;rot=-.3}
+  else if(an==='win')dy=-Math.abs(Math.sin(t/180))*30;
+  else if(an==='lose'){rot=-1.4;dy=22}
+  c.translate(dx,dy);c.rotate(rot);c.scale(1,sy);
+  c.fillStyle=ch[2];rr(c,-26,-72,52,72,14);
+  c.beginPath();c.arc(0,-92,32,0,7);c.fill();
+  c.font='46px serif';c.textAlign='center';c.fillText(ch[1],0,-76);
+  if(hand){c.font=(40*hand/1.3|0)+'px serif';c.fillText('🖐️',38+hand*8,-60)}
+  if(an==='guard'){c.font='56px serif';c.fillText('🛡️',40,-50)}
+  c.restore();
+  c.fillStyle='#fff6e0';c.font='bold 14px Mitr,sans-serif';c.textAlign='center';c.fillText(name,x,y-140);
+}
+function bg(){
+  const gr=g.createLinearGradient(0,0,0,320);gr.addColorStop(0,'#ff9e5e');gr.addColorStop(.6,'#ffd37a');gr.addColorStop(1,'#ffe9b0');g.fillStyle=gr;g.fillRect(0,0,480,320);
+  g.fillStyle='#fff3';g.beginPath();g.arc(240,150,70,0,7);g.fill();
+  g.fillStyle='#5a3fa8';g.beginPath();g.moveTo(0,250);for(let x=0;x<=480;x+=40)g.lineTo(x,200+((x/40)%2?-30:10));g.lineTo(480,250);g.fill();
+  g.fillStyle='#2e2270';g.fillRect(0,260,480,60);g.fillStyle='#ffcf33';g.fillRect(0,260,480,5);
+  g.fillStyle='#ffffff22';for(let x=20;x<480;x+=80)g.fillRect(x,290,40,4);
+}
+function frame(t){
+  g.save();if(shake>0){g.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.85;if(shake<.5)shake=0}
+  bg();
+  const ps=S&&S.phase!=='lobby'?S.players:[];
+  ps.forEach((p,i)=>{const k=p.tok+p.anim;if(seen[p.tok]!==k){seen[p.tok]=k;seen[p.tok+'t']=t}
+    drawChar(g,CH[p.char],i?340:140,270,i?-1:1,p.anim,t,seen[p.tok+'t']||t,p.name+(p.tok===tok?' ★':''))});
+  texts=texts.filter(o=>o.l>0);texts.forEach(o=>{o.l--;o.y-=1.2;g.globalAlpha=Math.min(1,o.l/20);g.fillStyle=o.c;g.strokeStyle='#2e2270';g.lineWidth=4;g.font='bold 26px Mitr,sans-serif';g.textAlign='center';g.strokeText(o.t,o.x,o.y);g.fillText(o.t,o.x,o.y);g.globalAlpha=1});
+  g.restore();
+  const p=$('pc').getContext('2d');p.clearRect(0,0,160,150);drawChar(p,CH[myChar],80,135,1,'idle',t,t,'');
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>
